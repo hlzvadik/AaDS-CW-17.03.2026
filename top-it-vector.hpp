@@ -2,10 +2,31 @@
 #define TOP_IT_VECTOR_HPP
 #include <cstddef>
 
-template< class T >
-class Vector
+namespace topit
 {
-  T* data;
-  size_t size, cap;
-};
+  template< class T >
+  class Vector
+  {
+    T* data_;
+    size_t size_, capacity_;
+  public:
+    Vector();
+    ~Vector();
+  };
+}
+
+template< class T >
+topit::Vector< T >::Vector():
+  data_(),
+  size_(),
+  capacity_()
+{
+
+}
+
+template< class T >
+topit::Vector< T >::~Vector()
+{
+  
+}
 #endif
