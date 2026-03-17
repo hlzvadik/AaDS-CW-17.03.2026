@@ -3,7 +3,9 @@
 
 bool testEmptyVector()
 {
-  return false;
+  topit::Vector< int > v;
+  bool res = v.is_empty();
+  return res;
 }
 
 int main()

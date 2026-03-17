@@ -12,6 +12,7 @@ namespace topit
   public:
     Vector();
     ~Vector();
+    bool is_empty() const noexcept;
   };
 }
 
@@ -20,13 +21,15 @@ topit::Vector< T >::Vector():
   data_(),
   size_(),
   capacity_()
-{
-
-}
+{}
 
 template< class T >
 topit::Vector< T >::~Vector()
+{}
+
+template< class T >
+bool topit::Vector< T >::is_empty() const noexcept
 {
-  
+  return false;
 }
 #endif
