@@ -17,10 +17,13 @@ namespace topit
     Vector& operator=(const Vector&);
     Vector& operator=(Vector&&);
 
+    T& operator[](size_t i) const noexcept;
+
     bool isEmpty() const noexcept;
     size_t getSize() const noexcept;
     size_t getCapacity() const noexcept;
 
+    void extend(size_t new_size);
     void pushBack(const T& v);
     void popBack();
     void insert(size_t i, const T& v);
@@ -62,16 +65,22 @@ namespace topit
   }
 
   template< class T >
-  void extend(Vector< T >& v, size_t new_capacity)
+  T& Vector< T >::operator[](size_t i) const noexcept
+  {
+    return data_[i];
+  }
+
+  template< class T >
+  void Vector< T >::extend(size_t new_capacity)
   {
     T* new_data = new T[new_capacity];
-    for (size_t i = 0; i < v.size_; ++i)
+    for (size_t i = 0; i < size_; ++i)
     {
-      new_data[i] = v.data_[i];
+      new_data[i] = data_[i];
     }
-    v.capacity_ = new_capacity;
-    delete[] v.data_;
-    v.data_ = new_data;
+    capacity_ = new_capacity;
+    delete[] data_;
+    data_ = new_data;
   }
 
   template< class T >
@@ -79,11 +88,11 @@ namespace topit
   {
     if (size_ == 0)
     {
-      extend(* this, 1);
+      extend(2);
     }
     else if (size_ == capacity_)
     {
-      extend(* this, capacity_ * 2);
+      extend(capacity_ * 2);
     }
     data_[size_] = v;
     size_++;

@@ -1,5 +1,8 @@
 CC = g++
 Flags = -c -Wall
 
-main: main.cpp
+all: main.o
+	$(CC) $^
+
+main.o: main.cpp
 	$(CC) $(Flags) $^
