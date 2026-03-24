@@ -9,18 +9,22 @@ namespace topit
   {
     T* data_;
     size_t size_, capacity_;
+    Vector(size_t size);
   public:
     Vector();
     ~Vector();
     Vector(const Vector< T >&);
-    Vector(Vector< T >&&);
+    Vector(Vector< T >&&) noexcept;
     Vector< T >& operator=(const Vector< T >&);
     Vector< T >& operator=(Vector< T >&&);
+    Vector(size_t size, const T& init);
 
     T& operator[](size_t i) noexcept;
     const T& operator[](size_t i) const noexcept;
     T& at(size_t i);
     const T& at(size_t i) const;
+
+    void swap(Vector< T >&) noexcept;
 
     bool isEmpty() const noexcept;
     size_t getSize() const noexcept;
@@ -89,41 +93,53 @@ namespace topit
   }
 
   template< class T >
-  Vector< T >::Vector(Vector< T >&& other):
+  Vector< T >::Vector(Vector< T >&& other) noexcept:
+    data_(other.data_),
     size_(std::move(other.size_)),
     capacity_(std::move(other.capacity_))
   {
-    data_ = other.data_;
     other.data_ = nullptr;
+  }
+
+  template< class T >
+  void swap(Vector< T >& other) noexcept
+  {
+    std::swap(data_, other.data_);
+    std::swap(size_, other.size_);
+    std::swap(capacity_, other.capacity_);
   }
 
   template< class T >
   Vector< T >& Vector< T >::operator=(const Vector< T >& other)
   {
-    if (* this != other)
-    {
-      size_ = other.size_;
-      capacity_ = size_ * 2;
-      data_ = new T[capacity_];
-      for (size_t i = 0; i < size_; ++i)
-      {
-        data_[i] = other.data_[i];
-      }
-    }
+    Vector< T > cop(other);
+    swap(cop);
     return * this;
   }
 
   template< class T >
   Vector< T >& Vector< T >::operator=(Vector< T >&& other)
   {
-    if (this != other)
-    {
-      size_ = std::move(other.size_);
-      capacity_ = std::move(other.capacity_);
-      data_ = other.data_;
-      other.data_ = nullptr;
-    }
+    Vector< T > cop(std::move(rhs));
+    swap(cop);
     return * this;
+  }
+
+  template< class T >
+  Vector< T >::Vector(size_t size):
+    data_(size ? new T[size] : nullptr),
+    size_(size),
+    capacity_(size)
+  {}
+
+  template< class T >
+  Vector< T >::Vector(size_t size, const T& init):
+    Vector(size)
+  {
+    for (size_t i = 0; i < size; ++i)
+    {
+      data_[i] = init;
+    }
   }
 
   template< class T >
