@@ -70,13 +70,21 @@ namespace topit
 
   template< class T >
   Vector< T >::Vector(const Vector< T >& other):
+    data_(other.size_ ? new T[other.size_ * 2] : nullptr),
     size_(other.size_),
     capacity_(size_ * 2)
   {
-    data_ = new T[capacity_];
     for (size_t i = 0; i < size_; ++i)
     {
-      data_[i] = other.data_[i];
+      try
+      {
+        data_[i] = other.data_[i];
+      }
+      catch (...)
+      {
+        delete[] data_;
+        throw;
+      }
     }
   }
 
@@ -102,7 +110,7 @@ namespace topit
         data_[i] = other.data_[i];
       }
     }
-    return this;
+    return * this;
   }
 
   template< class T >
@@ -115,7 +123,7 @@ namespace topit
       data_ = other.data_;
       other.data_ = nullptr;
     }
-    return this;
+    return * this;
   }
 
   template< class T >

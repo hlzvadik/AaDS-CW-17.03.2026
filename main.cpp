@@ -23,6 +23,21 @@ bool testElementInBoundAcces()
   }
 }
 
+bool testCopyConstructorForEmpty()
+{
+  topit::Vector< int > v;
+  topit::Vector< int > v1(v);
+  return v1 == v;
+}
+
+bool testCopyConstructorForNonEmpty()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  topit::Vector< int > v1(v);
+  return v1 == v;
+}
+
 bool testElementOutOfBoundAcces()
 {
   topit::Vector< int > v;
@@ -116,7 +131,8 @@ int main()
   test_t tests[] = {{"Empty vector", testEmptyVector}, {"Size vector", testGetSize}, {"Capacity vector", testGetCapacity},
     {"PushBack vector", testPushBack}, {"PopBack vector", testPopBack}, {"Element in bound acces", testElementInBoundAcces},
     {"Element out of bound acces", testElementOutOfBoundAcces}, {"Element in bound const acces", testElementInBoundConstAccess},
-    {"Element out of bound const acces", testElementOutOfBoundConstAccess}};
+    {"Element out of bound const acces", testElementOutOfBoundConstAccess}, {"Copy for empty", testCopyConstructorForEmpty},
+    {"Copy for non empty", testCopyConstructorForNonEmpty}};
   const size_t count = sizeof(tests) / sizeof(test_t);
   std::cout << std::boolalpha;
   bool res = true;
