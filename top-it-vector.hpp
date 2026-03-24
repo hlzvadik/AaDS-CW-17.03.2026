@@ -17,7 +17,10 @@ namespace topit
     Vector& operator=(const Vector&);
     Vector& operator=(Vector&&);
 
-    T& operator[](size_t i) const noexcept;
+    T& operator[](size_t i) noexcept;
+    const T& operator[](size_t i) const noexcept;
+    T& at(size_t i);
+    const T& at(size_t i) const;
 
     bool isEmpty() const noexcept;
     size_t getSize() const noexcept;
@@ -65,9 +68,41 @@ namespace topit
   }
 
   template< class T >
-  T& Vector< T >::operator[](size_t i) const noexcept
+  T& Vector< T >::operator[](size_t i) noexcept
   {
     return data_[i];
+  }
+
+  template< class T >
+  const T& Vector< T >::operator[](size_t i) const noexcept
+  {
+    return data_[i];
+  }
+
+  template< class T >
+  T& Vector< T >::at(size_t i)
+  {
+    if (i < getSize())
+    {
+      return data_[i];
+    }
+    else
+    {
+      throw std::out_of_range("Bad i");
+    }
+  }
+
+  template< class T >
+  const T& Vector< T >::at(size_t i) const
+  {
+    if (i < getSize())
+    {
+      return data_[i];
+    }
+    else
+    {
+      throw std::out_of_range("Bad i");
+    }
   }
 
   template< class T >
