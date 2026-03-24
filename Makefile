@@ -1,8 +1,9 @@
-CC = g++
-Flags = -c -Wall
+CXXFLAGS += -Wall -Wextra -std=c++14 -MMD
 
-all: main.o
-	$(CC) $^
+main: main.o
+	$(CXX) $^ -o $@
 
-main.o: main.cpp
-	$(CC) $(Flags) $^
+-include main.d
+
+clean:
+	-@$(RM) main.o main.d main
