@@ -12,10 +12,10 @@ namespace topit
   public:
     Vector();
     ~Vector();
-    Vector(const Vector&);
-    Vector(Vector&&);
-    Vector& operator=(const Vector&);
-    Vector& operator=(Vector&&);
+    Vector(const Vector< T >&);
+    Vector(Vector< T >&&);
+    Vector< T >& operator=(const Vector< T >&);
+    Vector< T >& operator=(Vector< T >&&);
 
     T& operator[](size_t i) noexcept;
     const T& operator[](size_t i) const noexcept;
@@ -32,21 +32,90 @@ namespace topit
     void insert(size_t i, const T& v);
     void erase(size_t i);
   };
+
+  template< class T >
+  bool operator==(const Vector< T >& rhs, const Vector< T >& lhs);
+  template< class T >
+  bool operator!=(const Vector< T >& rhs, const Vector< T >& lhs);
 }
 
 namespace topit
 {
   template< class T >
-  topit::Vector< T >::Vector():
+  bool operator==(const Vector< T >& rhs, const Vector< T >& lhs)
+  {
+    bool isEqual = lhs.getSize() == rhs.getSize();
+    for (size_t i = 0; (i < lhs.getSize()) && (isEqual = isEqual && lhs[i] == rhs[i]); ++i);
+    return isEqual;
+  }
+
+  template< class T >
+  bool operator!=(const Vector< T >& rhs, const Vector< T >& lhs)
+  {
+    return !(rhs == lhs);
+  }
+
+  template< class T >
+  Vector< T >::Vector():
     data_(nullptr),
     size_(0),
     capacity_(0)
   {}
 
   template< class T >
-  topit::Vector< T >::~Vector()
+  Vector< T >::~Vector()
   {
     delete[] data_;
+  }
+
+  template< class T >
+  Vector< T >::Vector(const Vector< T >& other):
+    size_(other.size_),
+    capacity_(size_ * 2)
+  {
+    data_ = new T[capacity_];
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i] = other.data_[i];
+    }
+  }
+
+  template< class T >
+  Vector< T >::Vector(Vector< T >&& other):
+    size_(std::move(other.size_)),
+    capacity_(std::move(other.capacity_))
+  {
+    data_ = other.data_;
+    other.data_ = nullptr;
+  }
+
+  template< class T >
+  Vector< T >& Vector< T >::operator=(const Vector< T >& other)
+  {
+    if (* this != other)
+    {
+      size_ = other.size_;
+      capacity_ = size_ * 2;
+      data_ = new T[capacity_];
+      for (size_t i = 0; i < size_; ++i)
+      {
+        data_[i] = other.data_[i];
+      }
+    }
+    return this;
+  }
+
+  template< class T >
+  Vector< T >& Vector< T >::operator=(Vector< T >&& other)
+  {
+    if (this != other)
+    {
+      size_ = std::move(other.size_);
+      capacity_ = std::move(other.capacity_);
+      data_ = other.data_;
+      other.data_ = nullptr;
+    }
+    return this;
   }
 
   template< class T >
