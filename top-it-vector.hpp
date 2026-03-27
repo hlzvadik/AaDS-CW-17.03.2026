@@ -31,10 +31,14 @@ namespace topit
     size_t getCapacity() const noexcept;
 
     void extend(size_t new_size);
+    void normalize();
+
     void pushBack(const T& v);
     void popBack();
     void insert(size_t i, const T& v);
+    void insert(size_t i, Vector< T >& v);
     void erase(size_t i);
+    void erase(size_t i, size_t n);
   };
 
   template< class T >
@@ -102,7 +106,7 @@ namespace topit
   }
 
   template< class T >
-  void swap(Vector< T >& other) noexcept
+  void Vector< T >::swap(Vector< T >& other) noexcept
   {
     std::swap(data_, other.data_);
     std::swap(size_, other.size_);
@@ -120,7 +124,7 @@ namespace topit
   template< class T >
   Vector< T >& Vector< T >::operator=(Vector< T >&& other)
   {
-    Vector< T > cop(std::move(rhs));
+    Vector< T > cop(std::move(other));
     swap(cop);
     return * this;
   }
@@ -212,6 +216,35 @@ namespace topit
   }
 
   template< class T >
+  void Vector< T >::normalize()
+  {
+    if (size_ == 0 && capacity_ > 2)
+    {
+      T* new_data_ = new T[2];
+      delete[] data_;
+      data_ = new_data_;
+    }
+    else if (size_ * 2 < capacity_)
+    {
+      T* new_data_ = new T[size_ * 2];
+      for (size_t i = 0; i < size_; ++i)
+      {
+        try
+        {
+          new_data_[i] = data_[i];
+        }
+        catch(const std::exception& e)
+        {
+          delete[] new_data_;
+        }
+      }
+      delete[] data_;
+      data_ = new_data_;
+      capacity_ = size_ * 2;
+    }
+  }
+
+  template< class T >
   void Vector< T >::pushBack(const T& v)
   {
     if (size_ == 0)
@@ -230,6 +263,116 @@ namespace topit
   void Vector< T >::popBack()
   {
     size_--;
+    normalize();
+  }
+
+  template< class T >
+  void Vector< T >::insert(size_t i, const T& v)
+  {
+    T* new_data_ = new T[size_ + 1];
+    try
+    {
+      for (size_t j = 0; j < i; ++j)
+      {
+        new_data_[j] = data_[j];
+      }
+      new_data_[i] = v;
+      for (size_t j = i + 1; j < size_ + 1; ++j)
+      {
+        new_data_[j] = data_[j - 1];
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    ++size_;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+  }
+
+  template< class T >
+  void Vector< T >::insert(size_t i, Vector< T >& v)
+  {
+    T* new_data_ = new T[size_ = v.getSize()];
+    try
+    {
+      for (size_t j = 0; j < i; ++j)
+      {
+        new_data_[j] = data_[j];
+      }
+      for (size_t j = 0; j < v.getSize(); ++j)
+      {
+        new_data_[i + j] = v[j];
+      }
+      for (size_t j = i; j < size_; ++j)
+      {
+        new_data_[v.getSize() + j] = data[j];
+      }
+    }
+    catch(const std::exception& e)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    delete[] data_;
+    data_ = new_data_;
+  }
+
+  template< class T >
+  void Vector< T >::erase(size_t i)
+  {
+    T* new_data_ = new T[size_ - 1];
+    try
+    {
+      for (size_t j = 0; j < i; ++j)
+      {
+        new_data_[j] = data_[j];
+      }
+      for (size_t j = i + 1; j < size_; ++j)
+      {
+        new_data_[j - 1] = data_[j];
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    --size_;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+    normalize();
+  }
+
+  template< class T >
+  void Vector< T >::erase(size_t i, size_t n)
+  {
+    T* new_data_ = new T[size_ - n];
+    try
+    {
+      for (size_t j = 0; j < i; ++j)
+      {
+        new_data_[j] = data_[j];
+      }
+      for (size_t j = i + n; j < size_; ++j)
+      {
+        new_data_[j - n] = data_[j];
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    size_ -= n;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+    normalize();
   }
 }
 
