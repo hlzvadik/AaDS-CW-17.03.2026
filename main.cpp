@@ -5,7 +5,7 @@ bool testEmptyVector()
 {
   topit::Vector< int > v;
   bool res = v.isEmpty();
-  return res == 0;
+  return res;
 }
 
 bool testElementInBoundAcces()
@@ -157,7 +157,7 @@ bool testEraseOne()
   return (v[0] == 3 && v[1] == 1 && v.getSize() == 2);
 }
 
-bool testEraceSeveral()
+bool testEraseSeveral()
 {
   topit::Vector< int > v;
   v.insert(0, 1);
@@ -168,6 +168,82 @@ bool testEraceSeveral()
   return (v[0] == 4 && v[1] == 1 && v.getSize() == 2);
 }
 
+bool testInsertOneIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.insert(v.begin(), 2);
+  return (v[0] == 2 && v[1] == 1 && v.getSize() == 2);
+}
+
+bool testInsertFromToIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.pushBack(5);
+  topit::Vector< int > v1;
+  v1.pushBack(2);
+  v1.pushBack(3);
+  v1.pushBack(4);
+  v.insert(v.begin() + 1, v1.begin(), v1.begin() + 3);
+  return (v[0] == 1 && v[1] == 2 && v[2] == 3 && v[3] == 4 && v[4] == 5 && v.getSize() == 5);
+}
+
+bool testInsertFromNIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.pushBack(5);
+  topit::Vector< int > v1;
+  v1.pushBack(2);
+  v1.pushBack(3);
+  v1.pushBack(4);
+  v.insert(v.begin() + 1, v1.begin(), 3);
+  return (v[0] == 1 && v[1] == 2 && v[2] == 3 && v[3] == 4 && v[4] == 5 && v.getSize() == 5);
+}
+
+bool testEraceOneIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.pushBack(5);
+  topit::Vector< int > v1;
+  v1.pushBack(2);
+  v1.pushBack(3);
+  v1.pushBack(4);
+  v.insert(v.begin() + 1, v1.begin(), 3);
+  v.erase(v.begin() + 1);
+  return (v[0] == 1 && v[1] == 3 && v[2] == 4 && v[3] == 5 && v.getSize() == 4);
+}
+
+bool testEraceFromToIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.pushBack(5);
+  topit::Vector< int > v1;
+  v1.pushBack(2);
+  v1.pushBack(3);
+  v1.pushBack(4);
+  v.insert(v.begin() + 1, v1.begin(), 3);
+  v.erase(v.begin() + 1, v.begin() + 4);
+  return (v[0] == 1 && v[1] == 5 && v.getSize() == 2);
+}
+
+bool testEraceFromNIterator()
+{
+  topit::Vector< int > v;
+  v.pushBack(1);
+  v.pushBack(5);
+  topit::Vector< int > v1;
+  v1.pushBack(2);
+  v1.pushBack(3);
+  v1.pushBack(4);
+  v.insert(v.begin() + 1, v1.begin(), 3);
+  v.erase(v.begin() + 1, 3);
+  return (v[0] == 1 && v[1] == 5 && v.getSize() == 2);
+}
+
 int main()
 {
   using test_t = std::pair< const char*, bool(*)() >;
@@ -176,7 +252,10 @@ int main()
     {"Element out of bound acces", testElementOutOfBoundAcces}, {"Element in bound const acces", testElementInBoundConstAccess},
     {"Element out of bound const acces", testElementOutOfBoundConstAccess}, {"Copy for empty", testCopyConstructorForEmpty},
     {"Copy for non empty", testCopyConstructorForNonEmpty}, {"Insert one", testInsertOne}, {"Insert vector", testInsertVector},
-    {"Erace one", testEraseOne}, {"Erace several", testEraceSeveral}};
+    {"Erace one", testEraseOne}, {"Erace several", testEraseSeveral}, {"Insert one by iterator", testInsertOneIterator},
+    {"Insert from to by iterator", testInsertFromToIterator}, {"Insert from n by iterator", testInsertFromNIterator},
+    {"Erace one by iterator", testEraceOneIterator}, {"Erace from to by iterator", testEraceFromToIterator},
+    {"Erace from n by iterator", testEraceFromNIterator}};
   const size_t count = sizeof(tests) / sizeof(test_t);
   std::cout << std::boolalpha;
   bool res = true;

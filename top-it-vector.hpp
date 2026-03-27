@@ -9,16 +9,17 @@ namespace topit
   {
     T* value_;
   public:
-    bool operator==(VIter< T > other);
-    bool operator!=(VIter< T > other);
-    T& operator*();
-    T& operator->();
-    VIter< T > operator++();
-    void operator+=(size_t n);
-    VIter< T > operator+(size_t n);
-    void operator--();
-    void operator-=(size_t n);
-    VIter< T > operator-(size_t n);
+    VIter(T*);
+    bool operator==(VIter< T > other) const noexcept;
+    bool operator!=(VIter< T > other)const noexcept;
+    T& operator*() const noexcept;
+    T* operator->() const noexcept;
+    VIter< T >& operator++() noexcept;
+    void operator+=(size_t n) noexcept;
+    VIter< T > operator+(size_t n) const noexcept;
+    VIter< T >& operator--() noexcept;
+    void operator-=(size_t n) noexcept;
+    VIter< T > operator-(size_t n) const noexcept;
   };
 
   template< class T >
@@ -53,18 +54,18 @@ namespace topit
     void pushBack(const T& v);
     void popBack();
     void insert(size_t i, const T& v);
-    void insert(size_t i, Vector< T >& v);
+    void insert(size_t i, const Vector< T >& v);
     void erase(size_t i);
     void erase(size_t i, size_t n);
 
     VIter< T > begin();
     VIter< T > end();
-    void insert(VIter< T > i, const T& val);
-    void insert(VIter< T > i, VIter< T > from, VIter< T > to);
-    void insert(VIter< T > i, VIter< T > from, size_t n);
-    void erase(VIter< T > i);
-    void erase(VIter< T > i, VIter< T > to);
-    void erase(VIter< T > i, size_t n);
+    void insert(const VIter< T > i, const T& val);
+    void insert(const VIter< T > i, const VIter< T > from, const VIter< T > to);
+    void insert(const VIter< T > i, const VIter< T > from, size_t n);
+    void erase(const VIter< T > i);
+    void erase(const VIter< T > i, const VIter< T > to);
+    void erase(const VIter< T > i, size_t n);
   };
 
   template< class T >
@@ -106,7 +107,7 @@ namespace topit
   Vector< T >::Vector(const Vector< T >& other):
     data_(other.size_ ? new T[other.size_ * 2] : nullptr),
     size_(other.size_),
-    capacity_(size_ * 2)
+    capacity_(size_ ? size_ * 2 : 2)
   {
     for (size_t i = 0; i < size_; ++i)
     {
@@ -175,7 +176,7 @@ namespace topit
   template< class T >
   bool Vector< T >::isEmpty() const noexcept
   {
-    return size_ != 0;
+    return size_ == 0;
   }
 
   template< class T >
@@ -248,6 +249,7 @@ namespace topit
     {
       T* new_data_ = new T[2];
       delete[] data_;
+      capacity_ = 2;
       data_ = new_data_;
     }
     else if (size_ * 2 < capacity_)
@@ -324,7 +326,7 @@ namespace topit
   }
 
   template< class T >
-  void Vector< T >::insert(size_t i, Vector< T >& v)
+  void Vector< T >::insert(size_t i, const Vector< T >& v)
   {
     if (i != 0 && i >= size_)
     {
@@ -360,7 +362,7 @@ namespace topit
   template< class T >
   void Vector< T >::erase(size_t i)
   {
-    if (i != 0 && i >= size_)
+    if (i >= size_)
     {
       throw std::out_of_range("Index out of range");
     }
@@ -391,7 +393,7 @@ namespace topit
   template< class T >
   void Vector< T >::erase(size_t i, size_t n)
   {
-    if (i != 0 && i + n >= size_)
+    if (i + n > size_)
     {
       throw std::out_of_range("Index out of range");
     }
@@ -420,70 +422,77 @@ namespace topit
   }
 
   template< class T >
-  bool VIter< T >::operator==(VIter< T > other)
+  VIter< T >::VIter(T* other):
+    value_(other)
+  {}
+
+  template< class T >
+  bool VIter< T >::operator==(VIter< T > other) const noexcept
   {
     return other.value_ == value_;
   }
 
   template< class T >
-  bool VIter< T >::operator!=(VIter< T > other)
+  bool VIter< T >::operator!=(VIter< T > other) const noexcept
   {
-    return !(other == (* this));
+    return other.value_ != value_;
   }
 
   template< class T >
-  T& VIter< T >::operator*()
+  T& VIter< T >::operator*() const noexcept
   {
     return * value_;
   }
   template< class T >
-  T& VIter< T >::operator->()
+  T* VIter< T >::operator->() const noexcept
   {
-    return * value_;
+    return value_;
   }
   template< class T >
-  VIter< T > VIter< T >::operator++()
+  VIter< T >& VIter< T >::operator++() noexcept
   {
-    return value_++;
+    value_ = value_ + 1;
+    return *this;
   }
   template< class T >
-  void VIter< T >::operator+=(size_t n)
+  void VIter< T >::operator+=(size_t n) noexcept
   {
     value_ += n;
   }
   template< class T >
-  VIter< T > VIter< T >::operator+(size_t n)
+  VIter< T > VIter< T >::operator+(size_t n) const noexcept
   {
-    return (value_ + n);
+    return {value_ + n};
   }
   template< class T >
-  void VIter< T >::operator--()
+  VIter< T >& VIter< T >::operator--() noexcept
   {
-    return value_--;
+    value_--;
+    return (* this);
   }
   template< class T >
-  void VIter< T >::operator-=(size_t n)
+  void VIter< T >::operator-=(size_t n) noexcept
   {
     value_ -= n;
   }
   template< class T >
-  VIter< T > VIter< T >::operator-(size_t n)
+  VIter< T > VIter< T >::operator-(size_t n) const noexcept
   {
-    return (value_ - n);
+    return VIter< T >(value_ - n);
   }
 
   template< class T >
   VIter< T > Vector< T >::begin()
   {
-    return {data_[0]};
+    return VIter< T >(data_);
   }
   template< class T >
   VIter< T > Vector< T >::end()
   {
-    return {data_[size_ - 1]};
+    return VIter< T >(data_ + size_);
   }
   template< class T >
-  void Vector< T >::insert(VIter< T > i, const T& val)
+  void Vector< T >::insert(const VIter< T > i, const T& val)
   {
     T* new_data_ = new T[size_ + 1];
     size_t id = 0;
@@ -516,9 +525,9 @@ namespace topit
     data_ = new_data_;
   }
   template< class T >
-  void Vector< T >::insert(VIter< T > i, VIter< T > from, VIter< T > to)
+  void Vector< T >::insert(const VIter< T > i, const VIter< T > from, const VIter< T > to)
   {
-    size_t n = 1;
+    size_t n = 0;
     VIter< T > temp = from;
     while (temp != to)
     {
@@ -528,7 +537,7 @@ namespace topit
     insert(i, from, n);
   }
   template< class T >
-  void Vector< T >::insert(VIter< T > i, VIter< T > from, size_t n)
+  void Vector< T >::insert(const VIter< T > i, const VIter< T > from, size_t n)
   {
     T* new_data_ = new T[size_ + n];
     VIter< T > now = begin();
@@ -550,7 +559,7 @@ namespace topit
       }
       while (now != end())
       {
-        new_data_[i] = (* now);
+        new_data_[id] = (* now);
         ++now;
         ++id;
       }
@@ -566,7 +575,7 @@ namespace topit
     data_ = new_data_;
   }
   template< class T >
-  void Vector< T >::erase(VIter< T > i)
+  void Vector< T >::erase(const VIter< T > i)
   {
     T* new_data_ = new T[size_ - 1];
     size_t id = 0;
@@ -596,17 +605,20 @@ namespace topit
     capacity_ = size_;
     delete[] data_;
     data_ = new_data_;
+    normalize();
   }
   template< class T >
-  void Vector< T >::erase(VIter< T > i, VIter< T > to)
+  void Vector< T >::erase(const VIter< T > i, const VIter< T > to)
   {
     size_t n = 0;
     VIter< T > now_temp = i;
     while(now_temp != to)
     {
       ++n;
+      ++now_temp;
     }
     erase(i, n);
+    normalize();
   }
   template< class T >
   void Vector< T >::erase(VIter< T > i, size_t n)
@@ -641,7 +653,8 @@ namespace topit
     size_ -= n;
     capacity_ = size_;
     delete[] data_;
-    new_data_ = data_;
+    data_ = new_data_;
+    normalize();
   }
 }
 
