@@ -125,6 +125,49 @@ bool testPopBack()
   return res == 1;
 }
 
+bool testInsertOne()
+{
+  topit::Vector< int > v;
+  v.insert(0, 1);
+  v.insert(0, 3);
+  v.insert(1, 2);
+  return (v[0] == 3 && v[1] == 2 && v[2] == 1 && v.getSize() == 3);
+}
+
+bool testInsertVector()
+{
+  topit::Vector< int > v;
+  v.insert(0, 1);
+  v.insert(0, 2);
+  v.insert(0, 3);
+  topit::Vector< int > v1;
+  v1.insert(0, 0);
+  v1.insert(0, 0);
+  v1.insert(1, v);
+  return (v1[1] == 3 && v1[2] == 2 && v1[3] == 1 && v1.getSize() == 5);
+}
+
+bool testEraseOne()
+{
+  topit::Vector< int > v;
+  v.insert(0, 1);
+  v.insert(0, 3);
+  v.insert(1, 2);
+  v.erase(1);
+  return (v[0] == 3 && v[1] == 1 && v.getSize() == 2);
+}
+
+bool testEraceSeveral()
+{
+  topit::Vector< int > v;
+  v.insert(0, 1);
+  v.insert(0, 2);
+  v.insert(0, 3);
+  v.insert(0, 4);
+  v.erase(1, 2);
+  return (v[0] == 4 && v[1] == 1 && v.getSize() == 2);
+}
+
 int main()
 {
   using test_t = std::pair< const char*, bool(*)() >;
@@ -132,7 +175,8 @@ int main()
     {"PushBack vector", testPushBack}, {"PopBack vector", testPopBack}, {"Element in bound acces", testElementInBoundAcces},
     {"Element out of bound acces", testElementOutOfBoundAcces}, {"Element in bound const acces", testElementInBoundConstAccess},
     {"Element out of bound const acces", testElementOutOfBoundConstAccess}, {"Copy for empty", testCopyConstructorForEmpty},
-    {"Copy for non empty", testCopyConstructorForNonEmpty}};
+    {"Copy for non empty", testCopyConstructorForNonEmpty}, {"Insert one", testInsertOne}, {"Insert vector", testInsertVector},
+    {"Erace one", testEraseOne}, {"Erace several", testEraceSeveral}};
   const size_t count = sizeof(tests) / sizeof(test_t);
   std::cout << std::boolalpha;
   bool res = true;

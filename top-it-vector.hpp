@@ -277,9 +277,9 @@ namespace topit
         new_data_[j] = data_[j];
       }
       new_data_[i] = v;
-      for (size_t j = i + 1; j < size_ + 1; ++j)
+      for (size_t j = i; j < size_; ++j)
       {
-        new_data_[j] = data_[j - 1];
+        new_data_[j + 1] = data_[j];
       }
     }
     catch (...)
@@ -296,7 +296,7 @@ namespace topit
   template< class T >
   void Vector< T >::insert(size_t i, Vector< T >& v)
   {
-    T* new_data_ = new T[size_ = v.getSize()];
+    T* new_data_ = new T[size_ + v.getSize()];
     try
     {
       for (size_t j = 0; j < i; ++j)
@@ -309,14 +309,16 @@ namespace topit
       }
       for (size_t j = i; j < size_; ++j)
       {
-        new_data_[v.getSize() + j] = data[j];
+        new_data_[v.getSize() + j] = data_[j];
       }
     }
-    catch(const std::exception& e)
+    catch(...)
     {
       delete[] new_data_;
       throw;
     }
+    size_ += v.getSize();
+    capacity_ = size_;
     delete[] data_;
     data_ = new_data_;
   }
