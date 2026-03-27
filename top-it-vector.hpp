@@ -5,6 +5,23 @@
 namespace topit
 {
   template< class T >
+  class VIter
+  {
+    T* value_;
+  public:
+    bool operator==(VIter< T > other);
+    bool operator!=(VIter< T > other);
+    T& operator*();
+    T& operator->();
+    VIter< T > operator++();
+    void operator+=(size_t n);
+    VIter< T > operator+(size_t n);
+    void operator--();
+    void operator-=(size_t n);
+    VIter< T > operator-(size_t n);
+  };
+
+  template< class T >
   class Vector
   {
     T* data_;
@@ -39,6 +56,15 @@ namespace topit
     void insert(size_t i, Vector< T >& v);
     void erase(size_t i);
     void erase(size_t i, size_t n);
+
+    VIter< T > begin();
+    VIter< T > end();
+    void insert(VIter< T > i, const T& val);
+    void insert(VIter< T > i, VIter< T > from, VIter< T > to);
+    void insert(VIter< T > i, VIter< T > from, size_t n);
+    void erase(VIter< T > i);
+    void erase(VIter< T > i, VIter< T > to);
+    void erase(VIter< T > i, size_t n);
   };
 
   template< class T >
@@ -269,6 +295,10 @@ namespace topit
   template< class T >
   void Vector< T >::insert(size_t i, const T& v)
   {
+    if (i != 0 && i >= size_)
+    {
+      throw std::out_of_range("Index out of range");
+    }
     T* new_data_ = new T[size_ + 1];
     try
     {
@@ -296,6 +326,10 @@ namespace topit
   template< class T >
   void Vector< T >::insert(size_t i, Vector< T >& v)
   {
+    if (i != 0 && i >= size_)
+    {
+      throw std::out_of_range("Index out of range");
+    }
     T* new_data_ = new T[size_ + v.getSize()];
     try
     {
@@ -326,6 +360,10 @@ namespace topit
   template< class T >
   void Vector< T >::erase(size_t i)
   {
+    if (i != 0 && i >= size_)
+    {
+      throw std::out_of_range("Index out of range");
+    }
     T* new_data_ = new T[size_ - 1];
     try
     {
@@ -353,6 +391,10 @@ namespace topit
   template< class T >
   void Vector< T >::erase(size_t i, size_t n)
   {
+    if (i != 0 && i + n >= size_)
+    {
+      throw std::out_of_range("Index out of range");
+    }
     T* new_data_ = new T[size_ - n];
     try
     {
@@ -375,6 +417,231 @@ namespace topit
     delete[] data_;
     data_ = new_data_;
     normalize();
+  }
+
+  template< class T >
+  bool VIter< T >::operator==(VIter< T > other)
+  {
+    return other.value_ == value_;
+  }
+
+  template< class T >
+  bool VIter< T >::operator!=(VIter< T > other)
+  {
+    return !(other == (* this));
+  }
+
+  template< class T >
+  T& VIter< T >::operator*()
+  {
+    return * value_;
+  }
+  template< class T >
+  T& VIter< T >::operator->()
+  {
+    return * value_;
+  }
+  template< class T >
+  VIter< T > VIter< T >::operator++()
+  {
+    return value_++;
+  }
+  template< class T >
+  void VIter< T >::operator+=(size_t n)
+  {
+    value_ += n;
+  }
+  template< class T >
+  VIter< T > VIter< T >::operator+(size_t n)
+  {
+    return (value_ + n);
+  }
+  template< class T >
+  void VIter< T >::operator--()
+  {
+    return value_--;
+  }
+  template< class T >
+  void VIter< T >::operator-=(size_t n)
+  {
+    value_ -= n;
+  }
+  template< class T >
+  VIter< T > VIter< T >::operator-(size_t n)
+  {
+    return (value_ - n);
+  }
+
+  template< class T >
+  VIter< T > Vector< T >::begin()
+  {
+    return {data_[0]};
+  }
+  template< class T >
+  VIter< T > Vector< T >::end()
+  {
+    return {data_[size_ - 1]};
+  }
+  template< class T >
+  void Vector< T >::insert(VIter< T > i, const T& val)
+  {
+    T* new_data_ = new T[size_ + 1];
+    size_t id = 0;
+    VIter< T > now = begin();
+    try
+    {
+      while (now != i)
+      {
+        new_data_[id] = (* now);
+        ++id;
+        ++now;
+      }
+      new_data_[id] = val;
+      ++id;
+      while (now != end())
+      {
+        new_data_[id] = (* now);
+        ++id;
+        ++now;
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    size_++;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+  }
+  template< class T >
+  void Vector< T >::insert(VIter< T > i, VIter< T > from, VIter< T > to)
+  {
+    size_t n = 1;
+    VIter< T > temp = from;
+    while (temp != to)
+    {
+      ++n;
+      ++temp;
+    }
+    insert(i, from, n);
+  }
+  template< class T >
+  void Vector< T >::insert(VIter< T > i, VIter< T > from, size_t n)
+  {
+    T* new_data_ = new T[size_ + n];
+    VIter< T > now = begin();
+    size_t id = 0;
+    try
+    {
+      while (now != i)
+      {
+        new_data_[id] = (* now);
+        ++id;
+        ++now;
+      }
+      VIter< T > now_temp = from;
+      for (size_t j = 0; j < n; ++j)
+      {
+        new_data_[id] = (* now_temp);
+        ++now_temp;
+        ++id;
+      }
+      while (now != end())
+      {
+        new_data_[i] = (* now);
+        ++now;
+        ++id;
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    size_ += n;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+  }
+  template< class T >
+  void Vector< T >::erase(VIter< T > i)
+  {
+    T* new_data_ = new T[size_ - 1];
+    size_t id = 0;
+    VIter< T > now = begin();
+    try
+    {
+      while (now != i)
+      {
+        new_data_[id] = (* now);
+        ++id;
+        ++now;
+      }
+      ++now;
+      while (now != end())
+      {
+        new_data_[id] = (* now);
+        ++id;
+        ++now;
+      }
+    }
+    catch (...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    size_--;
+    capacity_ = size_;
+    delete[] data_;
+    data_ = new_data_;
+  }
+  template< class T >
+  void Vector< T >::erase(VIter< T > i, VIter< T > to)
+  {
+    size_t n = 0;
+    VIter< T > now_temp = i;
+    while(now_temp != to)
+    {
+      ++n;
+    }
+    erase(i, n);
+  }
+  template< class T >
+  void Vector< T >::erase(VIter< T > i, size_t n)
+  {
+    T* new_data_ = new T[size_ - n];
+    VIter< T > now = begin();
+    size_t id = 0;
+    try
+    {
+      while (now != i)
+      {
+        new_data_[id] = (* now);
+        ++now;
+        ++id;
+      }
+      for (size_t i = 0; i < n; ++i)
+      {
+        ++now;
+      }
+      while (now != end())
+      {
+        new_data_[id] = (* now);
+        ++now;
+        ++id;
+      }
+    }
+    catch(...)
+    {
+      delete[] new_data_;
+      throw;
+    }
+    size_ -= n;
+    capacity_ = size_;
+    delete[] data_;
+    new_data_ = data_;
   }
 }
 
