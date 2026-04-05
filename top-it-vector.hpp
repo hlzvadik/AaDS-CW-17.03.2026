@@ -472,7 +472,7 @@ namespace topit
   }
   ////
 
-  // Insert и Erace
+  // Insert и Erace по индексу
   template< class T >
   void Vector< T >::insert(size_t i, const T& v)
   {
@@ -712,168 +712,46 @@ namespace topit
   template< class T >
   void Vector< T >::insert(const VIter< T > i, const T& val)
   {
-    T* new_data_ = new T[size_ + 1];
-    size_t id = 0;
-    VIter< T > now = begin();
-    try
-    {
-      while (now != i)
-      {
-        new_data_[id] = (* now);
-        ++id;
-        ++now;
-      }
-      new_data_[id] = val;
-      ++id;
-      while (now != end())
-      {
-        new_data_[id] = (* now);
-        ++id;
-        ++now;
-      }
-    }
-    catch (...)
-    {
-      delete[] new_data_;
-      throw;
-    }
-    size_++;
-    capacity_ = size_;
-    delete[] data_;
-    data_ = new_data_;
+    insert(i - begin(), val);
   }
   template< class T >
   void Vector< T >::insert(const VIter< T > i, const VIter< T > from, const VIter< T > to)
   {
-    size_t n = 0;
+    size_t count = 0;
     VIter< T > temp = from;
     while (temp != to)
     {
-      ++n;
+      ++count;
       ++temp;
     }
-    insert(i, from, n);
+    insert(i - begin(), from, count);
   }
   template< class T >
-  void Vector< T >::insert(const VIter< T > i, const VIter< T > from, size_t n)
+  void Vector< T >::insert(const VIter< T > i, const VIter< T > from, size_t count)
   {
-    T* new_data_ = new T[size_ + n];
-    VIter< T > now = begin();
-    size_t id = 0;
-    try
-    {
-      while (now != i)
-      {
-        new_data_[id] = (* now);
-        ++id;
-        ++now;
-      }
-      VIter< T > now_temp = from;
-      for (size_t j = 0; j < n; ++j)
-      {
-        new_data_[id] = (* now_temp);
-        ++now_temp;
-        ++id;
-      }
-      while (now != end())
-      {
-        new_data_[id] = (* now);
-        ++now;
-        ++id;
-      }
-    }
-    catch (...)
-    {
-      delete[] new_data_;
-      throw;
-    }
-    size_ += n;
-    capacity_ = size_;
-    delete[] data_;
-    data_ = new_data_;
+    insert(i - begin(), from. count);
   }
   template< class T >
   void Vector< T >::erase(const VIter< T > i)
   {
-    T* new_data_ = new T[size_ - 1];
-    size_t id = 0;
-    VIter< T > now = begin();
-    try
-    {
-      while (now != i)
-      {
-        new_data_[id] = (* now);
-        ++id;
-        ++now;
-      }
-      ++now;
-      while (now != end())
-      {
-        new_data_[id] = (* now);
-        ++id;
-        ++now;
-      }
-    }
-    catch (...)
-    {
-      delete[] new_data_;
-      throw;
-    }
-    size_--;
-    capacity_ = size_;
-    delete[] data_;
-    data_ = new_data_;
-    normalize();
+    erase(i - begin());
   }
   template< class T >
   void Vector< T >::erase(const VIter< T > i, const VIter< T > to)
   {
-    size_t n = 0;
+    size_t count = 0;
     VIter< T > now_temp = i;
     while(now_temp != to)
     {
-      ++n;
+      ++count;
       ++now_temp;
     }
-    erase(i, n);
-    normalize();
+    erase(i - begin(), count);
   }
   template< class T >
-  void Vector< T >::erase(VIter< T > i, size_t n)
+  void Vector< T >::erase(VIter< T > i, size_t count)
   {
-    T* new_data_ = new T[size_ - n];
-    VIter< T > now = begin();
-    size_t id = 0;
-    try
-    {
-      while (now != i)
-      {
-        new_data_[id] = (* now);
-        ++now;
-        ++id;
-      }
-      for (size_t i = 0; i < n; ++i)
-      {
-        ++now;
-      }
-      while (now != end())
-      {
-        new_data_[id] = (* now);
-        ++now;
-        ++id;
-      }
-    }
-    catch(...)
-    {
-      delete[] new_data_;
-      throw;
-    }
-    size_ -= n;
-    capacity_ = size_;
-    delete[] data_;
-    data_ = new_data_;
-    normalize();
-  }
+    erase(i - begin(), count);
 }
 
 #endif
