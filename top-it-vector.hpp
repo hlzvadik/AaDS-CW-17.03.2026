@@ -1,6 +1,7 @@
 #ifndef TOP_IT_VECTOR_HPP
 #define TOP_IT_VECTOR_HPP
 #include <cstddef>
+#include <stdexcept>
 
 namespace topit
 {
@@ -17,6 +18,7 @@ namespace topit
     VIter< T >& operator++() noexcept;
     void operator+=(size_t n) noexcept;
     VIter< T > operator+(size_t n) const noexcept;
+    size_t operator-(VIter< T >) const noexcept;
     VIter< T >& operator--() noexcept;
     void operator-=(size_t n) noexcept;
     VIter< T > operator-(size_t n) const noexcept;
@@ -27,13 +29,13 @@ namespace topit
   {
     T* data_;
     size_t size_, capacity_;
-    Vector(size_t size);
     void unsafePushBack(const T&) noexcept;
   public:
     Vector();
     ~Vector();
     Vector(const Vector< T >&);
     Vector(Vector< T >&&) noexcept;
+    Vector(size_t);
     Vector(std::initializer_list< T > il);
     Vector< T >& operator=(const Vector< T >&);
     Vector< T >& operator=(Vector< T >&&) noexcept;
@@ -66,8 +68,8 @@ namespace topit
     void erase(size_t);
     void erase(size_t, size_t);
 
-    VIter< T > begin();
-    VIter< T > end();
+    VIter< T > begin() const;
+    VIter< T > end() const;
     void insert(const VIter< T >, const T&);
     void insert(const VIter< T >, const VIter< T >, const VIter< T >);
     void insert(const VIter< T >, const VIter< T >, size_t);
@@ -98,8 +100,6 @@ namespace topit
     return !(rhs == lhs);
   }
 
-  // Конструкторы, деструктор и операторы
-
   template< class T >
   Vector< T >::Vector():
     data_(nullptr),
@@ -112,7 +112,7 @@ namespace topit
     size_(other.size_),
     capacity_(size_ ? size_ * 2 : 1)
   {
-    T* data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_))
+    data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_));
     size_t i = 0;
     try
     {
@@ -120,9 +120,9 @@ namespace topit
       {
         new (data_ + i) T(other.data_[i]);
       }
-      for (; i < capacity_; ++j)
+      for (; i < capacity_; ++i)
       {
-        new (data_ + j) T();
+        new (data_ + i) T();
       }
     }
     catch(...)
@@ -148,9 +148,9 @@ namespace topit
   template< class T >
   Vector< T >::Vector(size_t size):
     size_(size),
-    capacity_(size ? size * 2 : 1)
+    capacity_(size_ ? size_ * 2 : 1)
   {
-    T* data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
+    data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
 
     size_t i = 0;
     try
@@ -162,9 +162,9 @@ namespace topit
     }
     catch(...)
     {
-      for (size_t j; j < i; ++j)
+      for (size_t j = 0; j < i; ++j)
       {
-        data_[i].~T();
+        data_[j].~T();
       }
       ::operator delete (data_);
       throw;
@@ -176,7 +176,7 @@ namespace topit
     size_(size),
     capacity_(size ? size * 2 : 1)
   {
-    T* data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
+    data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
 
     size_t i = 0;
     try
@@ -192,7 +192,7 @@ namespace topit
     }
     catch(...)
     {
-      for (size_t j; j < i; ++j)
+      for (size_t j = 0; j < i; ++j)
       {
         data_[i].~T();
       }
@@ -204,9 +204,9 @@ namespace topit
   template< class T >
   Vector< T >::Vector(std::initializer_list< T > il):
     size_(il.size()),
-    capacity_(size ? size * 2 : 1)
+    capacity_(size_ ? size_ * 2 : 1)
   {
-    T* data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_));
+    data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_));
 
     size_t i = 0;
     try
@@ -219,7 +219,7 @@ namespace topit
     }
     catch(const std::exception& e)
     {
-      for (size_t j; j < i; ++j)
+      for (size_t j = 0; j < i; ++j)
       {
         data_[i].~T();
       }
@@ -247,12 +247,14 @@ namespace topit
   template< class T >
   Vector< T >::~Vector()
   {
-    delete[] data_;
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
   }
 
-  ////
 
-  // Какая-то работа с памятью
   template< class T >
   void Vector< T >::reserve(size_t new_capacity)
   {
@@ -269,14 +271,18 @@ namespace topit
       }
       catch (...)
       {
-        for (size_ j = 0; j < i; ++j)
+        for (size_t j = 0; j < i; ++j)
         {
           d[j].~T();
         }
         ::operator delete (d);
         throw;
       }
-      delete[] data_;
+      for (size_t i = 0; i < size_; ++i)
+      {
+        data_[i].~T();
+      }
+      ::operator delete(data_);
       data_ = d;
       capacity_ = new_capacity;
     }
@@ -285,6 +291,7 @@ namespace topit
   template< class T >
   void Vector< T >::shrinkToFit()
   {
+    size_t new_capacity = 0;
     if (capacity_ != size_)
     {
       new_capacity = size_;
@@ -299,14 +306,18 @@ namespace topit
       }
       catch (...)
       {
-        for (size_ j = 0; j < i; ++j)
+        for (size_t j = 0; j < i; ++j)
         {
           d[j].~T();
         }
         ::operator delete (d);
         throw;
       }
-      delete[] data_;
+      for (size_t i = 0; i < size_; ++i)
+      {
+        data_[i].~T();
+      }
+      ::operator delete(data_);
       data_ = d;
       capacity_ = new_capacity;
     }
@@ -316,13 +327,17 @@ namespace topit
   void Vector< T >::normalize()
   {
     size_t new_capacity = 0;
-    if (size_ == 0 && capacity_ > 2)
+    if (size_ == 0)
     {
       new_capacity = 2;
     }
     else if (size_ * 2 < capacity_)
     {
       new_capacity = size_ * 2;
+    }
+    else
+    {
+      return;
     }
     T* d = static_cast< T* >(::operator new (sizeof(T) * new_capacity));
     size_t i = 0;
@@ -335,14 +350,18 @@ namespace topit
     }
     catch (...)
     {
-      for (size_ j = 0; j < i; ++j)
+      for (size_t j = 0; j < i; ++j)
       {
         d[j].~T();
       }
       ::operator delete (d);
       throw;
     }
-    delete[] data_;
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
     data_ = d;
     capacity_ = new_capacity;
   }
@@ -354,10 +373,9 @@ namespace topit
     std::swap(size_, other.size_);
     std::swap(capacity_, other.capacity_);
   }
-  ////
 
 
-  // Методы для получения каких-то данных
+
   template< class T >
   bool Vector< T >::isEmpty() const noexcept
   {
@@ -413,15 +431,14 @@ namespace topit
       throw std::out_of_range("Bad i");
     }
   }
-  ////
 
 
-  // Разные PushBack и PopBack
+
   template< class T >
   void Vector< T >::unsafePushBack(const T& v) noexcept
   {
-    data_[size_] = v;
-    size_++;
+    new (data_ + size_) T(v);
+    ++size_;
   }
 
   template< class T >
@@ -429,7 +446,7 @@ namespace topit
   {
     if (capacity_ <= size_)
     {
-      reserve(size_ * 2);
+      reserve(size_ ? size_ * 2 : 2);
     }
     unsafePushBack(v);
   }
@@ -442,7 +459,7 @@ namespace topit
     {
       reserve(new_size * 2);
     }
-    for (size_t i = 0; i < new_size; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
       unsafePushBack(v);
     }
@@ -467,18 +484,27 @@ namespace topit
   template< class T >
   void Vector< T >::popBack()
   {
-    size_--;
-    normalize();
+    if (size_ > 0)
+    {
+      data_[size_ - 1].~T();
+      size_--;
+      normalize();
+    }
   }
-  ////
 
-  // Insert и Erace по индексу
+
+
   template< class T >
   void Vector< T >::insert(size_t i, const T& v)
   {
-    if (i != 0 && i >= size_)
+    if (i != 0 && i > size_)
     {
       throw std::out_of_range("Index out of range");
+    }
+    if (i == size_)
+    {
+      pushBack(v);
+      return;
     }
     T* d = static_cast< T* >(::operator new (sizeof(T) * (capacity_ + 2)));
     size_t j = 0;
@@ -508,9 +534,13 @@ namespace topit
       ::operator delete (d);
       throw;
     }
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
     ++size_;
     capacity_ += 2;
-    delete[] data_;
     data_ = d;
   }
 
@@ -518,9 +548,14 @@ namespace topit
   template< class IT >
   void Vector< T >::insert(size_t i, IT from, size_t count)
   {
-    if (i != 0 && i >= size_)
+    if (i != 0 && i > size_)
     {
       throw std::out_of_range("Index out of range");
+    }
+    if (i == size_)
+    {
+      pushBackRange(from, count);
+      return;
     }
     T* d = static_cast< T* >(::operator new (sizeof(T) * (capacity_ + 2 * count)));
     size_t j = 0;
@@ -537,7 +572,7 @@ namespace topit
       }
       for (; j < size_ + count; ++j)
       {
-        new (d + j) T(data[j - count]);
+        new (d + j) T(data_[j - count]);
       }
       for (; j < capacity_ + 2 * count; ++j)
       {
@@ -553,9 +588,13 @@ namespace topit
       ::operator delete (d);
       throw;
     }
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
     size_ += count;
     capacity_ += 2 * count;
-    delete[] data_;
     data_ = d;
   }
 
@@ -574,7 +613,7 @@ namespace topit
       {
         new (d + j) T(data_[j]);
       }
-      for (; j + 1 < size_ - 1; ++j)
+      for (; j < size_ - 1; ++j)
       {
         new (d + j) T(data_[j + 1]);
       }
@@ -587,14 +626,18 @@ namespace topit
     {
       for (size_t k = 0; k < j; ++k)
       {
-        d[j].~T();
+        d[k].~T();
       }
-      ::operator delete d;
+      ::operator delete (d);
       throw;
     }
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
     --size_;
     capacity_ = size_ * 2;
-    delete[] data_;
     data_ = d;
   }
 
@@ -605,7 +648,7 @@ namespace topit
     {
       throw std::out_of_range("Index out of range");
     }
-    T* d = static_cast< T* >(::operator delete (sizeof(T) * ((size_ - n) * 2)));
+    T* d = static_cast< T* >(::operator new (sizeof(T) * ((size_ - n) * 2)));
     size_t j = 0;
     try
     {
@@ -631,13 +674,18 @@ namespace topit
       ::operator delete (d);
       throw;
     }
+    for (size_t i = 0; i < size_; ++i)
+    {
+      data_[i].~T();
+    }
+    ::operator delete(data_);
     size_ -= n;
     capacity_ = size_ * 2;
-    delete[] data_;
     data_ = d;
   }
 
-  ////
+
+
 
   template< class T >
   VIter< T >::VIter(T* other):
@@ -700,15 +748,18 @@ namespace topit
   }
 
   template< class T >
-  VIter< T > Vector< T >::begin()
+  VIter< T > Vector< T >::begin() const
   {
     return VIter< T >(data_);
   }
   template< class T >
-  VIter< T > Vector< T >::end()
+  VIter< T > Vector< T >::end() const
   {
     return VIter< T >(data_ + size_);
   }
+
+
+
   template< class T >
   void Vector< T >::insert(const VIter< T > i, const T& val)
   {
@@ -729,7 +780,7 @@ namespace topit
   template< class T >
   void Vector< T >::insert(const VIter< T > i, const VIter< T > from, size_t count)
   {
-    insert(i - begin(), from. count);
+    insert(i - begin(), from, count);
   }
   template< class T >
   void Vector< T >::erase(const VIter< T > i)
@@ -752,6 +803,13 @@ namespace topit
   void Vector< T >::erase(VIter< T > i, size_t count)
   {
     erase(i - begin(), count);
+  }
+
+  template< class T >
+  size_t VIter< T >::operator-(VIter< T > i) const noexcept
+  {
+    return value_ - i.value_;
+  }
 }
 
 #endif
