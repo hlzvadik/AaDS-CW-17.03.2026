@@ -28,44 +28,52 @@ namespace topit
     T* data_;
     size_t size_, capacity_;
     Vector(size_t size);
+    void unsafePushBack(const T&) noexcept;
   public:
     Vector();
     ~Vector();
     Vector(const Vector< T >&);
     Vector(Vector< T >&&) noexcept;
+    Vector(std::initializer_list< T > il);
     Vector< T >& operator=(const Vector< T >&);
-    Vector< T >& operator=(Vector< T >&&);
+    Vector< T >& operator=(Vector< T >&&) noexcept;
     Vector(size_t size, const T& init);
 
     T& operator[](size_t i) noexcept;
-    const T& operator[](size_t i) const noexcept;
+    const T& operator[](size_t) const noexcept;
     T& at(size_t i);
     const T& at(size_t i) const;
-
-    void swap(Vector< T >&) noexcept;
 
     bool isEmpty() const noexcept;
     size_t getSize() const noexcept;
     size_t getCapacity() const noexcept;
 
-    void extend(size_t new_size);
+    void reserve(size_t);
+    void shrinkToFit();
     void normalize();
+    void swap(Vector< T >&) noexcept;
 
-    void pushBack(const T& v);
+    void pushBackCount(const T&, size_t);
+    void pushBack(const T&);
+    template< class IT >
+    void pushBackRange(IT, size_t);
     void popBack();
-    void insert(size_t i, const T& v);
-    void insert(size_t i, const Vector< T >& v);
-    void erase(size_t i);
-    void erase(size_t i, size_t n);
+
+
+    void insert(size_t, const T&);
+    template< class IT >
+    void insert(size_t, IT, size_t);
+    void erase(size_t);
+    void erase(size_t, size_t);
 
     VIter< T > begin();
     VIter< T > end();
-    void insert(const VIter< T > i, const T& val);
-    void insert(const VIter< T > i, const VIter< T > from, const VIter< T > to);
-    void insert(const VIter< T > i, const VIter< T > from, size_t n);
-    void erase(const VIter< T > i);
-    void erase(const VIter< T > i, const VIter< T > to);
-    void erase(const VIter< T > i, size_t n);
+    void insert(const VIter< T >, const T&);
+    void insert(const VIter< T >, const VIter< T >, const VIter< T >);
+    void insert(const VIter< T >, const VIter< T >, size_t);
+    void erase(const VIter< T >);
+    void erase(const VIter< T >, const VIter< T >);
+    void erase(const VIter< T >, size_t);
   };
 
   template< class T >
@@ -90,6 +98,8 @@ namespace topit
     return !(rhs == lhs);
   }
 
+  // Конструкторы, деструктор и операторы
+
   template< class T >
   Vector< T >::Vector():
     data_(nullptr),
@@ -98,46 +108,124 @@ namespace topit
   {}
 
   template< class T >
-  Vector< T >::~Vector()
-  {
-    delete[] data_;
-  }
-
-  template< class T >
   Vector< T >::Vector(const Vector< T >& other):
-    data_(other.size_ ? new T[other.size_ * 2] : nullptr),
     size_(other.size_),
-    capacity_(size_ ? size_ * 2 : 2)
+    capacity_(size_ ? size_ * 2 : 1)
   {
-    for (size_t i = 0; i < size_; ++i)
+    T* data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_))
+    size_t i = 0;
+    try
     {
-      try
+      for (; i < size_; ++i)
       {
-        data_[i] = other.data_[i];
+        new (data_ + i) T(other.data_[i]);
       }
-      catch (...)
+      for (; i < capacity_; ++j)
       {
-        delete[] data_;
-        throw;
+        new (data_ + j) T();
       }
+    }
+    catch(...)
+    {
+      for (size_t j = 0; j < i; ++j)
+      {
+        data_[j].~T();
+      }
+      ::operator delete (data_);
+      throw;
     }
   }
 
   template< class T >
   Vector< T >::Vector(Vector< T >&& other) noexcept:
     data_(other.data_),
-    size_(std::move(other.size_)),
-    capacity_(std::move(other.capacity_))
+    size_(other.size_),
+    capacity_(other.capacity_)
   {
     other.data_ = nullptr;
   }
 
   template< class T >
-  void Vector< T >::swap(Vector< T >& other) noexcept
+  Vector< T >::Vector(size_t size):
+    size_(size),
+    capacity_(size ? size * 2 : 1)
   {
-    std::swap(data_, other.data_);
-    std::swap(size_, other.size_);
-    std::swap(capacity_, other.capacity_);
+    T* data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
+
+    size_t i = 0;
+    try
+    {
+      for (; i < capacity_; ++i)
+      {
+        new (data_ + i) T();
+      }
+    }
+    catch(...)
+    {
+      for (size_t j; j < i; ++j)
+      {
+        data_[i].~T();
+      }
+      ::operator delete (data_);
+      throw;
+    }
+  }
+
+  template< class T >
+  Vector< T >::Vector(size_t size, const T& init):
+    size_(size),
+    capacity_(size ? size * 2 : 1)
+  {
+    T* data_ = static_cast< T* > (::operator new (sizeof(T) * capacity_));
+
+    size_t i = 0;
+    try
+    {
+      for (; i < size; ++i)
+      {
+        new (data_ + i) T(init);
+      }
+      for (; i < capacity_; ++i)
+      {
+        new (data_ + i) T();
+      }
+    }
+    catch(...)
+    {
+      for (size_t j; j < i; ++j)
+      {
+        data_[i].~T();
+      }
+      ::operator delete (data_);
+      throw;
+    }
+  }
+
+  template< class T >
+  Vector< T >::Vector(std::initializer_list< T > il):
+    size_(il.size()),
+    capacity_(size ? size * 2 : 1)
+  {
+    T* data_ = static_cast< T* >(::operator new (sizeof(T) * capacity_));
+
+    size_t i = 0;
+    try
+    {
+      for (auto it = il.begin(); it != il.end(); ++it)
+      {
+        data_[i] = * it;
+        ++i;
+      }
+    }
+    catch(const std::exception& e)
+    {
+      for (size_t j; j < i; ++j)
+      {
+        data_[i].~T();
+      }
+      ::operator delete (data_);
+      throw;
+    }
   }
 
   template< class T >
@@ -149,7 +237,7 @@ namespace topit
   }
 
   template< class T >
-  Vector< T >& Vector< T >::operator=(Vector< T >&& other)
+  Vector< T >& Vector< T >::operator=(Vector< T >&& other) noexcept
   {
     Vector< T > cop(std::move(other));
     swap(cop);
@@ -157,22 +245,119 @@ namespace topit
   }
 
   template< class T >
-  Vector< T >::Vector(size_t size):
-    data_(size ? new T[size] : nullptr),
-    size_(size),
-    capacity_(size)
-  {}
-
-  template< class T >
-  Vector< T >::Vector(size_t size, const T& init):
-    Vector(size)
+  Vector< T >::~Vector()
   {
-    for (size_t i = 0; i < size; ++i)
+    delete[] data_;
+  }
+
+  ////
+
+  // Какая-то работа с памятью
+  template< class T >
+  void Vector< T >::reserve(size_t new_capacity)
+  {
+    if (new_capacity > capacity_)
     {
-      data_[i] = init;
+      T* d = static_cast< T* >(::operator new (sizeof(T) * new_capacity));
+      size_t i = 0;
+      try
+      {
+        for (; i < size_; ++i)
+        {
+          new (d + i) T(data_[i]);
+        }
+      }
+      catch (...)
+      {
+        for (size_ j = 0; j < i; ++j)
+        {
+          d[j].~T();
+        }
+        ::operator delete (d);
+        throw;
+      }
+      delete[] data_;
+      data_ = d;
+      capacity_ = new_capacity;
     }
   }
 
+  template< class T >
+  void Vector< T >::shrinkToFit()
+  {
+    if (capacity_ != size_)
+    {
+      new_capacity = size_;
+      T* d = static_cast< T* >(::operator new (sizeof(T) * new_capacity));
+      size_t i = 0;
+      try
+      {
+        for (; i < size_; ++i)
+        {
+          new (d + i) T(data_[i]);
+        }
+      }
+      catch (...)
+      {
+        for (size_ j = 0; j < i; ++j)
+        {
+          d[j].~T();
+        }
+        ::operator delete (d);
+        throw;
+      }
+      delete[] data_;
+      data_ = d;
+      capacity_ = new_capacity;
+    }
+  }
+
+  template< class T >
+  void Vector< T >::normalize()
+  {
+    size_t new_capacity = 0;
+    if (size_ == 0 && capacity_ > 2)
+    {
+      new_capacity = 2;
+    }
+    else if (size_ * 2 < capacity_)
+    {
+      new_capacity = size_ * 2;
+    }
+    T* d = static_cast< T* >(::operator new (sizeof(T) * new_capacity));
+    size_t i = 0;
+    try
+    {
+      for (; i < size_; ++i)
+      {
+        new (d + i) T(data_[i]);
+      }
+    }
+    catch (...)
+    {
+      for (size_ j = 0; j < i; ++j)
+      {
+        d[j].~T();
+      }
+      ::operator delete (d);
+      throw;
+    }
+    delete[] data_;
+    data_ = d;
+    capacity_ = new_capacity;
+  }
+
+  template< class T >
+  void Vector< T >::swap(Vector< T >& other) noexcept
+  {
+    std::swap(data_, other.data_);
+    std::swap(size_, other.size_);
+    std::swap(capacity_, other.capacity_);
+  }
+  ////
+
+
+  // Методы для получения каких-то данных
   template< class T >
   bool Vector< T >::isEmpty() const noexcept
   {
@@ -228,63 +413,55 @@ namespace topit
       throw std::out_of_range("Bad i");
     }
   }
+  ////
 
-  template< class T >
-  void Vector< T >::extend(size_t new_capacity)
-  {
-    T* new_data = new T[new_capacity];
-    for (size_t i = 0; i < size_; ++i)
-    {
-      new_data[i] = data_[i];
-    }
-    capacity_ = new_capacity;
-    delete[] data_;
-    data_ = new_data;
-  }
 
+  // Разные PushBack и PopBack
   template< class T >
-  void Vector< T >::normalize()
+  void Vector< T >::unsafePushBack(const T& v) noexcept
   {
-    if (size_ == 0 && capacity_ > 2)
-    {
-      T* new_data_ = new T[2];
-      delete[] data_;
-      capacity_ = 2;
-      data_ = new_data_;
-    }
-    else if (size_ * 2 < capacity_)
-    {
-      T* new_data_ = new T[size_ * 2];
-      for (size_t i = 0; i < size_; ++i)
-      {
-        try
-        {
-          new_data_[i] = data_[i];
-        }
-        catch(const std::exception& e)
-        {
-          delete[] new_data_;
-        }
-      }
-      delete[] data_;
-      data_ = new_data_;
-      capacity_ = size_ * 2;
-    }
+    data_[size_] = v;
+    size_++;
   }
 
   template< class T >
   void Vector< T >::pushBack(const T& v)
   {
-    if (size_ == 0)
+    if (capacity_ <= size_)
     {
-      extend(2);
+      reserve(size_ * 2);
     }
-    else if (size_ == capacity_)
+    unsafePushBack(v);
+  }
+
+  template< class T >
+  void Vector< T >::pushBackCount(const T& v, size_t count)
+  {
+    size_t new_size = size_ + count;
+    if (capacity_ < new_size)
     {
-      extend(capacity_ * 2);
+      reserve(new_size * 2);
     }
-    data_[size_] = v;
-    size_++;
+    for (size_t i = 0; i < new_size; ++i)
+    {
+      unsafePushBack(v);
+    }
+  }
+
+  template< class T >
+  template< class IT >
+  void Vector< T >::pushBackRange(IT from, size_t count)
+  {
+    size_t new_size = size_ + count;
+    if (capacity_ < new_size)
+    {
+      reserve(new_size * 2);
+    }
+    for (size_t i = 0; i < count; ++i)
+    {
+      unsafePushBack(* from);
+      ++from;
+    }
   }
 
   template< class T >
@@ -293,7 +470,9 @@ namespace topit
     size_--;
     normalize();
   }
+  ////
 
+  // Insert и Erace
   template< class T >
   void Vector< T >::insert(size_t i, const T& v)
   {
@@ -301,62 +480,83 @@ namespace topit
     {
       throw std::out_of_range("Index out of range");
     }
-    T* new_data_ = new T[size_ + 1];
+    T* d = static_cast< T* >(::operator new (sizeof(T) * (capacity_ + 2)));
+    size_t j = 0;
     try
     {
-      for (size_t j = 0; j < i; ++j)
+      for (; j < i; ++j)
       {
-        new_data_[j] = data_[j];
+        new (d + j) T(data_[j]);
       }
-      new_data_[i] = v;
-      for (size_t j = i; j < size_; ++j)
+      new (d + j) T(v);
+      ++j;
+      for (; j < size_ + 1; ++j)
       {
-        new_data_[j + 1] = data_[j];
+        new (d + j) T(data_[j - 1]);
+      }
+      for (; j < capacity_ + 2; ++j)
+      {
+        new (d + j) T();
       }
     }
     catch (...)
     {
-      delete[] new_data_;
+      for (size_t k = 0; k < j; ++k)
+      {
+        d[k].~T();
+      }
+      ::operator delete (d);
       throw;
     }
     ++size_;
-    capacity_ = size_;
+    capacity_ += 2;
     delete[] data_;
-    data_ = new_data_;
+    data_ = d;
   }
 
   template< class T >
-  void Vector< T >::insert(size_t i, const Vector< T >& v)
+  template< class IT >
+  void Vector< T >::insert(size_t i, IT from, size_t count)
   {
     if (i != 0 && i >= size_)
     {
       throw std::out_of_range("Index out of range");
     }
-    T* new_data_ = new T[size_ + v.getSize()];
+    T* d = static_cast< T* >(::operator new (sizeof(T) * (capacity_ + 2 * count)));
+    size_t j = 0;
     try
     {
-      for (size_t j = 0; j < i; ++j)
+      for (; j < i; ++j)
       {
-        new_data_[j] = data_[j];
+        new (d + j) T(data_[j]);
       }
-      for (size_t j = 0; j < v.getSize(); ++j)
+      for (; j < i + count; ++j)
       {
-        new_data_[i + j] = v[j];
+        new (d + j) T(* from);
+        ++from;
       }
-      for (size_t j = i; j < size_; ++j)
+      for (; j < size_ + count; ++j)
       {
-        new_data_[v.getSize() + j] = data_[j];
+        new (d + j) T(data[j - count]);
+      }
+      for (; j < capacity_ + 2 * count; ++j)
+      {
+        new (d + j) T();
       }
     }
     catch(...)
     {
-      delete[] new_data_;
+      for (size_t k = 0; k < j; ++k)
+      {
+        d[k].~T();
+      }
+      ::operator delete (d);
       throw;
     }
-    size_ += v.getSize();
-    capacity_ = size_;
+    size_ += count;
+    capacity_ += 2 * count;
     delete[] data_;
-    data_ = new_data_;
+    data_ = d;
   }
 
   template< class T >
@@ -366,28 +566,36 @@ namespace topit
     {
       throw std::out_of_range("Index out of range");
     }
-    T* new_data_ = new T[size_ - 1];
+    T* d = static_cast< T* >(::operator new (sizeof(T) * ((size_- 1) * 2)));
+    size_t j = 0;
     try
     {
-      for (size_t j = 0; j < i; ++j)
+      for (; j < i; ++j)
       {
-        new_data_[j] = data_[j];
+        new (d + j) T(data_[j]);
       }
-      for (size_t j = i + 1; j < size_; ++j)
+      for (; j + 1 < size_ - 1; ++j)
       {
-        new_data_[j - 1] = data_[j];
+        new (d + j) T(data_[j + 1]);
+      }
+      for (; j < ((size_- 1) * 2); ++j)
+      {
+        new (d + j) T();
       }
     }
     catch (...)
     {
-      delete[] new_data_;
+      for (size_t k = 0; k < j; ++k)
+      {
+        d[j].~T();
+      }
+      ::operator delete d;
       throw;
     }
     --size_;
-    capacity_ = size_;
+    capacity_ = size_ * 2;
     delete[] data_;
-    data_ = new_data_;
-    normalize();
+    data_ = d;
   }
 
   template< class T >
@@ -397,29 +605,39 @@ namespace topit
     {
       throw std::out_of_range("Index out of range");
     }
-    T* new_data_ = new T[size_ - n];
+    T* d = static_cast< T* >(::operator delete (sizeof(T) * ((size_ - n) * 2)));
+    size_t j = 0;
     try
     {
-      for (size_t j = 0; j < i; ++j)
+      for (; j < i; ++j)
       {
-        new_data_[j] = data_[j];
+        new (d + j) T(data_[j]);
       }
-      for (size_t j = i + n; j < size_; ++j)
+      for (; j < size_ - n; ++j)
       {
-        new_data_[j - n] = data_[j];
+        new (d + j) T(data_[j + n]);
+      }
+      for (; j < ((size_ - n) * 2); ++j)
+      {
+        new (d + j) T();
       }
     }
     catch (...)
     {
-      delete[] new_data_;
+      for (size_t k = 0; k < j; ++k)
+      {
+        d[k].~T();
+      }
+      ::operator delete (d);
       throw;
     }
     size_ -= n;
-    capacity_ = size_;
+    capacity_ = size_ * 2;
     delete[] data_;
-    data_ = new_data_;
-    normalize();
+    data_ = d;
   }
+
+  ////
 
   template< class T >
   VIter< T >::VIter(T* other):

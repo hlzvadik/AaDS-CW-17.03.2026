@@ -244,6 +244,12 @@ bool testEraceFromNIterator()
   return (v[0] == 1 && v[1] == 5 && v.getSize() == 2);
 }
 
+bool testInitializerList()
+{
+  topit::Vector< int > v = {1, 2, 3};
+  return v.getSize() == 3 && (v[0] == 1) && (v[1] == 2);
+}
+
 int main()
 {
   using test_t = std::pair< const char*, bool(*)() >;
@@ -255,7 +261,7 @@ int main()
     {"Erace one", testEraseOne}, {"Erace several", testEraseSeveral}, {"Insert one by iterator", testInsertOneIterator},
     {"Insert from to by iterator", testInsertFromToIterator}, {"Insert from n by iterator", testInsertFromNIterator},
     {"Erace one by iterator", testEraceOneIterator}, {"Erace from to by iterator", testEraceFromToIterator},
-    {"Erace from n by iterator", testEraceFromNIterator}};
+    {"Erace from n by iterator", testEraceFromNIterator}, {"Non-empty vector for non-empty initializer list", testInitializerList}};
   const size_t count = sizeof(tests) / sizeof(test_t);
   std::cout << std::boolalpha;
   bool res = true;
